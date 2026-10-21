@@ -27,7 +27,7 @@ cmd.show("sticks", "pocket")
 cmd.util.cbag("pocket")
 cmd.color("palegreen", "pocket and elem C")
 cmd.show("sticks", "lig")
-cmd.color("cyan", "lig and elem C")
+cmd.color(spec.get("ligand_color", "cyan"), "lig and elem C")
 cmd.set("stick_radius", 0.15, "pocket")
 cmd.set("stick_radius", 0.25, "lig")
 if spec.get("reference"):

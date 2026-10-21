@@ -35,11 +35,11 @@ PILLS = {"pass": "ok", "accept": "ok", "yes": "ok", "warn": "warn", "demote": "w
 
 
 def render_pose_png(receptor: str, ligand_file: str, out_png: str, reference: str | None = None,
-                    label: str = "", width: int = 700, height: int = 520, timeout: int = 180) -> bool:
+                    label: str = "", width: int = 700, height: int = 520, timeout: int = 180, ligand_color: str = "cyan") -> bool:
     """PyMOL still of one ligand in its pocket. Returns False (and leaves no image) if PyMOL fails."""
     spec = Path(out_png).with_suffix(".json")
     spec.write_text(json.dumps(dict(receptor=str(receptor), ligand=str(ligand_file), out=str(out_png),
-                                    reference=reference, label=label, width=width, height=height)))
+                                    reference=reference, label=label, width=width, height=height, ligand_color=ligand_color)))
     try:
         subprocess.run([sys.executable, str(Path(__file__).with_name("report_pymol.py")), str(spec)],
                        check=True, capture_output=True, timeout=timeout)
@@ -222,7 +222,7 @@ td.long { max-width: 380px; overflow:hidden; text-overflow:ellipsis; color: var(
 .hint { color: var(--muted); font-size: 12px; margin: 6px 2px 0; }
 .strip { display:flex; gap:14px; overflow-x:auto; padding: 12px; scroll-snap-type: x proximity; }
 .strip figure { margin:0; flex: 0 0 auto; width: 330px; background: var(--card2); border:1px solid var(--line); border-radius:12px; overflow:hidden; scroll-snap-align:start; }
-.strip img { display:block; width:100%; } .strip.grid2d figure { width: auto; max-width: 100%; }
+.strip img { display:block; width:100%; } .strip.grid2d { justify-content: center; } .strip.grid2d figure { width: auto; max-width: 100%; }
 .strip figcaption { font-size: 12px; color: var(--muted); padding: 8px 12px 10px; } .strip figcaption b { color: var(--text); }
 .viewwrap { margin-top: 6px; }
 .tabs { display:flex; gap:6px; overflow-x:auto; padding: 2px 0 10px; }
@@ -231,6 +231,17 @@ td.long { max-width: 380px; overflow:hidden; text-overflow:ellipsis; color: var(
 .viewer { position:relative; width:100%; height: 520px; border:1px solid var(--line); border-radius:14px; overflow:hidden; background: #0b1020; }
 .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color: var(--muted); margin-top:8px; }
 .legend i { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+.chart { margin: 2px 0 18px; }
+.chart svg { width:100%; height:auto; display:block; background: var(--bg2); border:1px solid var(--line); border-radius:12px; }
+.chart svg text { fill: #aab6d8; font-family: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; font-size: 11px; }
+.chart .ct { color: var(--orange); font-size:13px; text-transform:uppercase; letter-spacing:1px; margin: 0 0 8px; font-weight:600; }
+.vcards { display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:12px; margin-bottom:14px; }
+.vcard { background: var(--bg2); border:1px solid var(--line); border-radius:14px; padding:12px 14px; border-left:4px solid var(--blue); }
+.vcard.ok { border-left-color: var(--green); } .vcard.warn { border-left-color: var(--amber); } .vcard.bad { border-left-color: var(--red); }
+.vtop { display:flex; align-items:center; gap:10px; margin-bottom:8px; } .vname { font-family: ui-monospace, Menlo, monospace; font-size:11.5px; color:#cdd8ff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vm { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; }
+.vm div { background: rgba(255,255,255,.03); border-radius:8px; padding:6px 8px; } .vm b { display:block; font-size:16px; } .vm small { color: var(--muted); font-size:11px; }
+.vflag { color: var(--muted); font-size:12px; margin-top:8px; }
 .note { font-size:12.5px; color: var(--muted); margin-top: 28px; text-align:center; }
 #up { position: fixed; right: 22px; bottom: 22px; z-index: 60; width: 44px; height: 44px; border-radius: 50%; border:1px solid var(--cyan);
       background: rgba(18,26,51,.92); color: var(--cyan); font-size: 20px; cursor: pointer; display:none; box-shadow: 0 6px 20px rgba(0,0,0,.45); }
@@ -258,7 +269,7 @@ function show(step, i) {
   v.setStyle({ model: pid }, { cartoon: { color: '#7b8cff', opacity: 0.5, arrows: true } });                // the protein as a ribbon
   st.lig = v.addModel(m.sdf, 'sdf');
   const lid = st.lig.getID();
-  v.setStyle({ model: lid }, { stick: { radius: 0.3, colorscheme: 'cyanCarbon' } });                         // the ligand: thick sticks
+  v.setStyle({ model: lid }, { stick: { radius: 0.3, colorscheme: m.lc || 'cyanCarbon' } });                         // the ligand: thick sticks
   (m.pocket || []).forEach(g => v.addStyle({ model: pid, chain: g[0], resi: g[1] },                           // pocket residues: thin sticks
         { stick: { radius: 0.13, colorscheme: { prop: 'elem', map: { C: 0x9fd8a8, N: 0x7aa2ff, O: 0xff7a90, S: 0xffd166, H: 0xe6ebf7 } } } }));
   st.ref = null;
@@ -329,12 +340,15 @@ class Report:
         self.chips, self.stats = chips or [], stats or []
 
     def add_step(self, key: str, title: str, summary: str = "", table: list[dict] | None = None,
-                 poses: list[dict] | None = None, max_images: int = 6, molecules: list[dict] | None = None):
-        """poses: [{"name", "sdf" (mol block text), "caption", optional "reference_sdf" drawn grey behind it}]. Each gets a PyMOL still
-        (first `max_images`) and a tab in the 3Dmol viewer. molecules: [{"smiles", "legend"}] drawn as one 2D grid (steps before any
-        pose exists). Without a receptor, or without poses, the step is table/text only."""
+                 poses: list[dict] | None = None, max_images: int = 6, molecules: list[dict] | None = None,
+                 chart_html: str = "", ligand: str = "cyan", ref_name: str = "reference pose"):
+        """chart_html: trusted HTML (SVG charts, cards) shown under the summary. ligand: 'cyan' or 'magenta', the ligand colour in
+        stills and the 3D view (so docked and relaxed poses look different). ref_name: what the grey reference pose is.
+        poses: [{"name", "sdf" (mol block text), "caption", optional "reference_sdf" drawn grey behind it}]. Each gets a PyMOL still
+        (first `max_images`) and a tab in the 3Dmol viewer. molecules: [{"smiles", "legend", optional "group"}] drawn as one 2D grid per
+        group (steps before any pose exists). Without a receptor, or without poses, the step is table/text only."""
         self.steps.append(dict(key=key, title=title, summary=summary, table=table or [], poses=poses or [],
-                               max_images=max_images, molecules=molecules or []))
+                               max_images=max_images, molecules=molecules or [], chart_html=chart_html, ligand=ligand, ref_name=ref_name))
 
     def _reference_block(self) -> str | None:
         try:
@@ -346,24 +360,30 @@ class Report:
         out = [f'<section class="card" id="{s["key"]}"><div class="card-head"><span class="stepno">{n:02d}</span>'
                f'<h2>{html.escape(s["title"])}</h2><a class="totop" href="#top">&uarr; top</a></div>'
                f'<p class="summary">{html.escape(s["summary"])}</p>']
+        if s["chart_html"]:
+            out.append(f'<div class="chart">{s["chart_html"]}</div>')
         if s["table"]:
             out.append(_table_html(s["table"]))
         if s["molecules"]:
-            png = self.assets / f'{s["key"]}_grid.png'
-            if molecule_grid_png([m["smiles"] for m in s["molecules"]], [m.get("legend", "") for m in s["molecules"]], str(png)):
-                out.append('<h3>Molecules</h3><div class="scroll"><div class="strip grid2d"><figure>'
-                           f'<img src="{_b64(png)}" alt="molecule grid"></figure></div></div>')
+            groups: dict = {}
+            for m in s["molecules"]:
+                groups.setdefault(m.get("group", ""), []).append(m)
+            for gi, (gname, ms) in enumerate(groups.items()):
+                png = self.assets / f'{s["key"]}_grid_{gi}.png'
+                if molecule_grid_png([m["smiles"] for m in ms], [m.get("legend", "") for m in ms], str(png)):
+                    out.append(f'<h3>{html.escape(gname or "Molecules")}</h3><div class="scroll"><div class="strip grid2d"><figure>'
+                               f'<img src="{_b64(png)}" alt="molecule grid"></figure></div></div>')
         if s["poses"] and self.receptor:
             figs, models = [], []
             for k, p in enumerate(s["poses"]):
                 ref_text = p.get("reference_sdf") or ref_block
-                models.append(dict(sdf=p["sdf"], ref=ref_text))
+                models.append(dict(sdf=p["sdf"], ref=ref_text, lc=s["ligand"] + "Carbon"))
                 if k < s["max_images"]:
                     sdf = self.assets / f'{s["key"]}_{k}.sdf'
                     png = self.assets / f'{s["key"]}_{k}.png'
                     ref_arg = self.reference
                     # PyMOL stills are cached: re-render only when the ligand (or its overlay), label or style changed
-                    stamp = json.dumps([STYLE_VERSION, p["sdf"], p.get("reference_sdf"), p["name"], str(self.receptor), self.reference])
+                    stamp = json.dumps([STYLE_VERSION, p["sdf"], p.get("reference_sdf"), p["name"], str(self.receptor), self.reference, s["ligand"]])
                     stamp_file = png.with_suffix(".stamp")
                     fresh = png.exists() and stamp_file.exists() and stamp_file.read_text() == stamp
                     sdf.write_text(p["sdf"])
@@ -371,7 +391,7 @@ class Report:
                         ref_path = self.assets / f'{s["key"]}_{k}_ref.sdf'
                         ref_path.write_text(p["reference_sdf"])
                         ref_arg = str(ref_path)
-                    if fresh or render_pose_png(self.receptor, str(sdf), str(png), ref_arg, label=p["name"]):
+                    if fresh or render_pose_png(self.receptor, str(sdf), str(png), ref_arg, label=p["name"], ligand_color=s["ligand"]):
                         stamp_file.write_text(stamp)
                         figs.append(f'<figure><img src="{_b64(png)}" alt="{html.escape(p["name"])}"><figcaption><b>{html.escape(p["name"])}</b> '
                                     f'{html.escape(p.get("caption", ""))}</figcaption></figure>')
@@ -379,12 +399,14 @@ class Report:
                 out.append(f'<h3>PyMOL stills</h3><div class="scroll"><div class="strip">{"".join(figs)}</div></div>'
                            f'<div class="hint">scroll sideways for more</div>')
             tabs = "".join(f'<button onclick="show(\'{s["key"]}\',{i})">{html.escape(p["name"])}</button>' for i, p in enumerate(s["poses"]))
-            ref_legend = '<span><i style="background:#a9b3d1"></i>crystal / docked reference</span>' if ref_block or any(p.get("reference_sdf") for p in s["poses"]) else ""
+            lig_hex = {"cyan": "#4cc9f0", "magenta": "#f72585"}.get(s["ligand"], "#4cc9f0")
+            ref_legend = (f'<span><i style="background:#cfd6ee"></i>{html.escape(s["ref_name"])} (grey lines)</span>'
+                          if ref_block or any(p.get("reference_sdf") for p in s["poses"]) else "")
             out.append(f'<h3>Rotatable view</h3><div class="viewwrap"><div class="tabs" id="t_{s["key"]}">{tabs}</div>'
                        f'<div class="viewer" id="v_{s["key"]}"></div>'
                        '<div class="legend"><span><i style="background:#7b8cff"></i>protein ribbon</span>'
                        '<span><i style="background:#9fd8a8"></i>pocket residues within 4 &Aring; (thin sticks)</span>'
-                       f'<span><i style="background:#4cc9f0"></i>ligand (thick sticks)</span>{ref_legend}'
+                       f'<span><i style="background:{lig_hex}"></i>{"relaxed" if s["ligand"] == "magenta" else "docked"} ligand (thick sticks)</span>{ref_legend}'
                        '<span>drag to rotate, scroll to zoom</span></div></div>')
             steps_js[s["key"]] = models
         out.append("</section>")
