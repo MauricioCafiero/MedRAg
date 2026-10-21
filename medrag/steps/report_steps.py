@@ -253,7 +253,7 @@ def add_validate_section(rep: Report, state: RunState):
                  '<div class="hint">bars are coloured by verdict; strain is graded relative to the seed, so a bar is only a problem past the amber line.</div>')
     rep.add_step("validate", "Validate (MLIP feasibility)",
                  "Each best in-site pose is relaxed in a truncated pocket cluster with an MLIP, then checked for strain, clashes, residual forces and lost contacts. "
-                 "This is a sanity filter, not a rescoring or a binding prediction (on the SULT1A3 test it did not separate right-site from wrong-site poses)."
+                 "This is a sanity filter, not a rescoring or a binding prediction."
                  + (f" Strain is graded relative to the seed ({seed_strain:.1f} kcal/mol): warn above seed + 3, fail above seed + 6, never tighter than the defaults."
                     if seed_strain is not None else ""),
                  table=rows, poses=pose_list, max_images=len(pose_list), chart_html=chart, ligand="magenta", ref_name="docked pose")
