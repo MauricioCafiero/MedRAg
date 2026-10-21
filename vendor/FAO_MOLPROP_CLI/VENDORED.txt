@@ -1,1 +1,0 @@
-vendored from https://github.com/MauricioCafiero/FAO_MOLPROP_CLI @ 46e8672: code/docking_module.py only (find_contacts and helpers)

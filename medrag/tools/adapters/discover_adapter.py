@@ -1,10 +1,10 @@
-"""Find structures for a protein name with MoDrAg's tools (vendor/MoDrAg_CLI): UniProt entry -> RCSB search -> PDB files,
+"""Find structures for a protein name with MoDrAg's tools (medrag/lib/MoDrAg_CLI): UniProt entry -> RCSB search -> PDB files,
 each checked to really be that protein (DBREF) and annotated with its resolution. Runs with cwd = <run>/discover/code, so
 MoDrAg's ../pdb_files and ../scratch land in the run directory."""
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "vendor/MoDrAg_CLI/code"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib/MoDrAg_CLI"))
 import torch  # noqa: F401,E402  (MoDrAg imports torch before the native chem libs)
 
 

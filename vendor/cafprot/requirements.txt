@@ -1,3 +1,0 @@
-rdkit
-dimorphite-dl
-pdb2pqr

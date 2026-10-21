@@ -1,7 +1,7 @@
 """Build the MLIP-ready system for one docked pose: a capped pocket cut-out
 plus the ligand (with explicit hydrogens), as ASE Atoms.
 
-The pocket cut-out is UMADock's (vendor/UMADock/code/UMADock/prep_binding_site.py): PDBFixer protonation at pH,
+The pocket cut-out is UMADock's (medrag/lib/UMADock/prep_binding_site.py): PDBFixer protonation at pH,
 whole residues near the ligand, ACE/NME peptide caps on cut chain ends, net charge from the ff14SB partial-charge
 sum, and only the C-alpha of each residue constrained. The one addition is selecting residues from the docked
 ligand's coordinates (UMADock looks the ligand up by residue name in the PDB) and across all chains (the HMGCR
@@ -24,7 +24,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from scipy.spatial import cKDTree
 
-_PREP = Path(__file__).resolve().parents[2] / "vendor/UMADock/code/UMADock/prep_binding_site.py"
+_PREP = Path(__file__).resolve().parents[1] / "lib/UMADock/prep_binding_site.py"
 _spec = importlib.util.spec_from_file_location("umadock_prep_binding_site", _PREP)
 prep = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(prep)

@@ -1,5 +1,5 @@
 """site step: is a docked pose in the expected binding site? Expected = the residues the crystal ligand contacts (H-bonds,
-hydrophobic, pi, halogen, salt bridges; ODDT through vendor/FAO_MOLPROP_CLI's find_contacts). Each docked pose is scored by
+hydrophobic, pi, halogen, salt bridges; ODDT through medrag/lib/FAO_MOLPROP_CLI's find_contacts). Each docked pose is scored by
 recall = fraction of those residues it also contacts. On SULT1A3 this separated the right site (recall 1.00 / 0.71) from the
 wrong one (0.14-0.29) where Vina scores and the MLIP feasibility checks did not (n = 6 poses; the 0.5 cut sits in that gap)."""
 from __future__ import annotations

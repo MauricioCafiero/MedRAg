@@ -9,6 +9,21 @@ import importlib
 import json
 import sys
 
+import atexit as _atexit
+import os as _os
+
+_TRACE = _os.environ.get("MEDRAG_TRACE_FILE")
+if _TRACE:
+    _opened = set()
+    sys.addaudithook(lambda ev, args: _opened.add(str(args[0])) if ev == "open" and args and isinstance(args[0], (str, bytes)) and "/medrag/lib/" in str(args[0]) else None)
+
+    def _dump():
+        files = {m.__file__ for m in list(sys.modules.values()) if getattr(m, "__file__", None) and "/medrag/lib/" in str(m.__file__)}
+        with open(_TRACE, "a") as fh:
+            for f in sorted(files | _opened):
+                fh.write(f + "\n")
+    _atexit.register(_dump)
+
 code_dir, module, function, result_path, kwargs = sys.argv[1:6]
 sys.path.insert(0, code_dir)
 try:

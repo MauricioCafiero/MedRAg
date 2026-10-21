@@ -1,9 +1,9 @@
-"""JSON-friendly entry point onto vendor/GenMask (CafChemSubs.gen_mask); run through medrag.tools.vendor.call.
-Adapted from vendor/GenMask/code/gen_mask_cli.py (same calls, no CSV/image handling)."""
+"""JSON-friendly entry point onto medrag/lib/GenMask (CafChemSubs.gen_mask); run through medrag.tools.vendor.call.
+Adapted from GenMask's gen_mask_cli.py (same calls, no CSV/image handling)."""
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "vendor/GenMask/code"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib/GenMask"))
 import CafChemSubs as cs
 
 DEFAULT_MODEL = "cafierom/bert-base-cased-ChemTok-ZN250K-V1"

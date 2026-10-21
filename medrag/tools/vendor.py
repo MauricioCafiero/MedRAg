@@ -1,4 +1,4 @@
-"""Call functions in the vendored repos (vendor/<repo>/...) through the isolated runner."""
+"""Call functions in the code borrowed from the author's other repos (medrag/lib/<repo>/...) through the isolated runner."""
 from __future__ import annotations
 
 import json
@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-VENDOR = ROOT / "vendor"
+VENDOR = Path(__file__).resolve().parents[1] / "lib"        # code borrowed from the author's other repos, see README
 
 
 class VendorError(RuntimeError):
@@ -32,7 +32,7 @@ def clean_env() -> dict:
 
 
 def call(repo_code_dir: str, module: str, function: str, cwd: str | Path, timeout: int = 3600, **kwargs):
-    """Run vendor/<repo_code_dir>/<module>.<function>(**kwargs) with cwd=<cwd>; return its (JSON-able) result."""
+    """Run medrag/lib/<repo_code_dir>/<module>.<function>(**kwargs) with cwd=<cwd>; return its (JSON-able) result."""
     code_dir = VENDOR / repo_code_dir
     if not code_dir.is_dir():
         raise VendorError(f"missing vendored code dir {code_dir}")

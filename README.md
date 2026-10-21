@@ -10,9 +10,8 @@ checks, and writes an HTML report. An LLM agent (Ollama cloud or Anthropic) can 
 set_target -> generate -> filter -> dock -> site -> validate -> report
 ```
 
-Built on the author's own repos, vendored under `vendor/` and called unchanged through thin adapters:
-GenMask, bioisostere_assist, MoDrAg_CLI (ADMET node), dock_assist, UMADock (pocket cut-out), cafprot, FAO_MOLPROP_CLI
-(`find_contacts`).
+Built on the author's own repos: the pieces it uses were copied, unchanged, into `medrag/lib/` (see
+[Code borrowed from other repos](#code-borrowed-from-other-repos)) and are called through thin wrappers.
 
 ## Quickstart (about 15 minutes, most of it downloads)
 
@@ -135,13 +134,28 @@ checkpointed and resumable.
 medrag/            pipeline.py (driver), agent.py, llm.py (ollama + anthropic backends), state.py, report*.py
 medrag/steps/      one module per step
 medrag/feasibility/  system.py (pocket cut-out), calc.py (MLIPs), checks.py, thresholds.py
-medrag/tools/      vendor.py (isolated calls into vendor/), adapters/ (JSON entry points onto the vendored tools)
+medrag/tools/      vendor.py (isolated calls into medrag/lib/), adapters/ (JSON entry points onto the borrowed tools)
+medrag/lib/        code copied from the author's other repos (below), one folder per source repo
 tests/              development scripts that read local run data (runs/...): not runnable from a fresh clone
 calibrate.py        validate thresholds from a feas_poses run (development tool)
-vendor/             the author's repos (see each repo's own README)
 runs/<id>/          created on first run: state.json, report.html, per-step working directories
 ```
 
+## Code borrowed from other repos
+
+All of it is the author's own, copied unchanged (line endings aside) from the commit shown into `medrag/lib/<repo>/`, with that
+repo's `LICENSE` beside it. Everything not listed here is new in this repo.
+
+| Repo (github.com/MauricioCafiero/...) | Commit | Files used | What MedRAg uses it for |
+|---|---|---|---|
+| [GenMask](https://github.com/MauricioCafiero/GenMask) | `55a4165` | `CafChemSubs.py` | analogue generation by masking and refilling SMILES |
+| [bioisostere_assist](https://github.com/MauricioCafiero/bioisostere_assist) | `744deb5` | `CafChemShape.py`, `fragment.py`, `library.py`, `library_100k_usr.pkl`, `oddt-0.7.tar.gz` | shape-matched substituent swaps from the prebuilt 100k library; the `oddt` source for `setup.sh` |
+| [MoDrAg_CLI](https://github.com/MauricioCafiero/MoDrAg_CLI) | `f71d8d9` | `admet_node.py`, `modrag_protein_functions.py`, `modrag_molecule_functions.py`, `gpt_node.py`, `finetune_gpt.py`, `CafChemGPT.py`, `smiles_tokenizer.py`, and `data/` (mini-GPT weights, vocabularies, 305K SMILES) | ADMET-AI predictions; UniProt, ChEMBL and RCSB lookups; PubChem neighbours; the mini GPT |
+| [dock_assist](https://github.com/MauricioCafiero/dock_assist) | `8895041` | `vina_dock.py`, `modrag_protein_functions.py` | AutoDock Vina docking; listing a structure's bound ligands |
+| [UMADock](https://github.com/MauricioCafiero/UMADock) | `8b3b34a` | `prep_binding_site.py` | cutting the binding site out of the protein for the MLIP checks |
+| [cafprot](https://github.com/MauricioCafiero/cafprot) | `d3da76e` | `cafprot.py` | charge state of each molecule at pH 7.4 |
+| [FAO_MOLPROP_CLI](https://github.com/MauricioCafiero/FAO_MOLPROP_CLI) | `46e8672` | `docking_module.py` | residue-contact analysis behind the binding-site check |
+
 ## License
 
-MIT (see `LICENSE`). The repositories under `vendor/` are included unchanged and keep their own licenses (each has a `LICENSE` file).
+MIT (see `LICENSE`). The borrowed files keep the licenses of the repos above (copies in `medrag/lib/<repo>/LICENSE`).

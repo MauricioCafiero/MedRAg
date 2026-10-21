@@ -1,4 +1,0 @@
-rdkit
-numpy
-dockstring
-openbabel-wheel

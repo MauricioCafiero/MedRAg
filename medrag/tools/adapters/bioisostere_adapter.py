@@ -1,10 +1,10 @@
-"""JSON-friendly entry point onto vendor/bioisostere_assist: the query_lead_cli.py ranking loop without the docking,
+"""JSON-friendly entry point onto medrag/lib/bioisostere_assist: the query_lead_cli.py ranking loop without the docking,
 CSV and image parts (docking is a separate pipeline step)."""
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parents[3] / "vendor/bioisostere_assist"
-sys.path.insert(0, str(HERE / "code"))
+HERE = Path(__file__).resolve().parents[2] / "lib/bioisostere_assist"
+sys.path.insert(0, str(HERE))
 import CafChemShape as shape      # first: blocks the incompatible openbabel bindings before oddt is imported
 import fragment as frag
 import library as lib
@@ -13,7 +13,7 @@ from rdkit import Chem
 MAX_USEFUL_SIMILARITY = 0.999     # as in query_lead_cli: a match this close just rebuilds the lead
 
 
-def analogues(lead: str, top: int = 10, library: str = str(HERE / "library/library_100k_usr.pkl")) -> list:
+def analogues(lead: str, top: int = 10, library: str = str(HERE / "library_100k_usr.pkl")) -> list:
     """Shape-bioisostere swaps of the lead's substituents: [{smiles, similarity, lead_fragment, library_fragment}]."""
     method, params, fragments = lib.load_library(library)
     for s in [s for s in fragments if (m := Chem.MolFromSmiles(s)) is not None and frag.has_radical(m)]:

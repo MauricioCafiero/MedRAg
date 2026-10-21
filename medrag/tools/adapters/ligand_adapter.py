@@ -1,4 +1,4 @@
-"""Bound drug-like ligands of PDB files, found with dock_assist's own find_ligand_centroids (vendor/dock_assist): its text report is
+"""Bound drug-like ligands of PDB files, found with dock_assist's own find_ligand_centroids (medrag/lib/dock_assist): its text report is
 parsed, then crystallization additives, ions, cofactors and ligands far from the protein are dropped. A separate module from
 discover_adapter because dock_assist and MoDrAg_CLI both ship a `modrag_protein_functions` and cannot share a process."""
 import re
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "vendor/dock_assist/code"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib/dock_assist"))
 import modrag_protein_functions as dock_assist_funcs        # noqa: E402  (the dock_assist copy)
 
 # crystallization additives, buffers, ions and cofactors: bound to many proteins, never the molecule being optimised

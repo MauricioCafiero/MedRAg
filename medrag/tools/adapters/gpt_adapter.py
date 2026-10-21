@@ -1,10 +1,10 @@
-"""JSON-friendly entry points onto MoDrAg's ChEMBL tools and mini-GPT fine-tune (vendor/MoDrAg_CLI/code). The vendored code
+"""JSON-friendly entry points onto MoDrAg's ChEMBL tools and mini-GPT fine-tune (medrag/lib/MoDrAg_CLI). The vendored code
 reads and writes ../data, ../scratch and ../images relative to its cwd, so medrag.steps.generate gives each run its own
-gpt/ tree (gpt/code as cwd, gpt/data holding symlinks to the foundation weights and vocab) and nothing lands in vendor/."""
+gpt/ tree (gpt/code as cwd, gpt/data holding symlinks to the foundation weights and vocab) and nothing lands in medrag/lib/."""
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "vendor/MoDrAg_CLI/code"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib/MoDrAg_CLI"))
 import torch  # noqa: F401,E402  (MoDrAg imports torch before the native chem libs)
 
 

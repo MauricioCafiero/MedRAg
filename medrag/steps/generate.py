@@ -1,6 +1,6 @@
 """generate step: propose analogues of a seed molecule. Sources are the vendored tools, run in isolated processes:
-  genmask      - mask/unmask SMILES with the ChemTok BERT model (vendor/GenMask)
-  bioisostere  - shape-similar substituent swaps from the prebuilt 100k library (vendor/bioisostere_assist)
+  genmask      - mask/unmask SMILES with the ChemTok BERT model (medrag/lib/GenMask)
+  bioisostere  - shape-similar substituent swaps from the prebuilt 100k library (medrag/lib/bioisostere_assist)
   gpt          - MoDrAg's mini GPT fine-tuned on a ChEMBL target's IC50 bioactives (needs a ChEMBL id; new molecules for the
                  target, not analogues of the seed)"""
 from __future__ import annotations
@@ -23,7 +23,7 @@ def _canon(smi: str) -> str | None:
 
 def gpt_workdir(state: RunState) -> Path:
     """Per-run tree for the vendored GPT code, which reads/writes ../data, ../scratch and ../images next to its cwd. The foundation
-    weights and vocab are symlinked, so the fine-tuned model and the bioactives cache land in the run, not in vendor/."""
+    weights and vocab are symlinked, so the fine-tuned model and the bioactives cache land in the run, not in medrag/lib/."""
     root = (state.dir / "gpt").resolve()
     for d in ("code", "scratch", "images", "data"):
         (root / d).mkdir(parents=True, exist_ok=True)

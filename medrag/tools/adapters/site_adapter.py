@@ -1,10 +1,10 @@
-"""JSON-friendly entry point onto vendor/FAO_MOLPROP_CLI (docking_module.find_contacts): the residues a ligand pose contacts
+"""JSON-friendly entry point onto medrag/lib/FAO_MOLPROP_CLI (docking_module.find_contacts): the residues a ligand pose contacts
 (H-bonds, hydrophobic contacts, pi-stacking, pi-cation, halogen bonds, salt bridges; ODDT). Same calls as that repo's
 contacted_residues(), but taking a receptor PDB and a ligand SDF directly instead of a dockstring target."""
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "vendor/FAO_MOLPROP_CLI/code"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib/FAO_MOLPROP_CLI"))
 import docking_module as dm
 import oddt
 

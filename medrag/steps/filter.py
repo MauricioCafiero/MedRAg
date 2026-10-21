@@ -104,7 +104,7 @@ def _props(mol: Chem.Mol) -> dict:
 
 def _admet(smiles: list[str]) -> list[dict | None]:
     """ADMET-AI predictions through MoDrAg's admet_node (isolated process; first call loads the model, ~10 s)."""
-    res = vendor.call("MoDrAg_CLI/code", "admet_node", "admet_node", cwd="runs/_admet_cwd", smiles=smiles)
+    res = vendor.call("MoDrAg_CLI", "admet_node", "admet_node", cwd="runs/_admet_cwd", smiles=smiles)
     return res[0] if res and res[0] is not None else [None] * len(smiles)
 
 
@@ -179,7 +179,7 @@ def filter_candidates(state: RunState, use_admet: bool = True, bbb: str = "avoid
             rec["filter"] = dict(status="fail", reasons=["invalid after protonation"])
             continue
         if smi == seed or species == protonate(seed):
-            rec["filter"] = dict(status="fail", reasons=["is the seed"])
+            rec["filter"] = dict(status="seed", reasons=["the molecule being optimised"])
             continue
         if species in seen:
             rec["filter"] = dict(status="fail", reasons=[f"duplicate of {seen[species]}"])

@@ -53,7 +53,7 @@ def dock_candidates(state: RunState, exhaustiveness: int = 8, site_radius: float
         for k in range(0, len(todo), CHUNK):
             chunk = todo[k:k + CHUNK]
             try:
-                vendor.call("dock_assist/code", "vina_dock", "dock_at_centroid", cwd=cwd, receptor_pdb=str(rec),
+                vendor.call("dock_assist", "vina_dock", "dock_at_centroid", cwd=cwd, receptor_pdb=str(rec),
                             smiles_list=[sp for _, sp in chunk], center=list(center), exhaustiveness=exhaustiveness, num_modes=9)
             except vendor.VendorError:
                 raise                      # per-ligand failures come back in the report; an exception means setup is broken

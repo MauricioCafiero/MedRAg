@@ -22,11 +22,11 @@ uv pip install --python $PY \
 uv pip install --python $PY --no-deps "fairchem-core==2.21.0" "mace-torch==0.3.16"
 
 # generate/filter extras. admet-ai would downgrade rdkit (2026.9.1 -> 2026.3.6) unless it is held with a constraint;
-# py3Dmol is imported by GenMask; oddt (bioisostere_assist shape descriptors) is built from the vendored tarball without
-# isolation (it needs six). The vendored CafChemShape blocks the incompatible openbabel bindings itself.
+# py3Dmol is imported by GenMask; oddt (bioisostere_assist shape descriptors) is built from the copy of its tarball in medrag/lib/bioisostere_assist without
+# isolation (it needs six). CafChemShape (borrowed from bioisostere_assist) blocks the incompatible openbabel bindings itself.
 echo "rdkit==$($PY -c 'import rdkit; print(rdkit.__version__)')" > /tmp/medrag_constraints.txt
 uv pip install --python $PY -c /tmp/medrag_constraints.txt admet-ai py3Dmol six setuptools wheel
-uv pip install --python $PY -c /tmp/medrag_constraints.txt --no-build-isolation vendor/bioisostere_assist/vendor/oddt-0.7.tar.gz
+uv pip install --python $PY -c /tmp/medrag_constraints.txt --no-build-isolation medrag/lib/bioisostere_assist/oddt-0.7.tar.gz
 # GenMask model (433 MB) is fetched on first use, or ahead of time with:
 #   $PY -c "from huggingface_hub import snapshot_download; snapshot_download('cafierom/bert-base-cased-ChemTok-ZN250K-V1')"
 
