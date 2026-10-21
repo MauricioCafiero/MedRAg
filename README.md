@@ -79,9 +79,12 @@ reply is checked against the task list and the tool-call log. Missing tasks go b
 answer ends with a checklist. `--no-review` skips this; `--planner-backend/--planner-model` use a different model for it.
 
 The HTML report (`runs/<id>/report.html`) opens in the browser the first time the agent or CLI builds it and is refreshed after
-every turn that changes results. It has one section per step: 2D molecule grids (generate, filter), PyMOL stills plus a
-rotatable 3Dmol viewer (dock, validate; the crystal pose is the grey overlay in dock, the docked pose in validate).
-3Dmol loads from a CDN, so the viewer needs internet.
+every turn that changes results. It is a dark single page with a floating title bar that keeps every section link in view (plus a
+back-to-top button), a hero header with the run's key facts, summary tiles (candidates, filter, docked, in the site, validated) and one
+numbered card per step. Long tables scroll inside a fixed-height window with a sticky header, sortable columns and colored status
+pills; the PyMOL stills and 2D molecule grids sit in sideways-scrolling strips. Dock and validate also have a rotatable 3Dmol view:
+the protein as a ribbon, the pocket residues within 4 A as thin sticks, the ligand as thick sticks, and the reference pose (crystal
+ligand, or the docked pose behind a relaxed one) as grey lines. 3Dmol loads from a CDN, so that view needs internet.
 
 ## The steps
 

@@ -95,3 +95,41 @@ def add_validate_section(rep: Report, state: RunState):
                  + (f" Strain is graded relative to the seed ({state.data['validate_seed_strain']:.1f} kcal/mol): warn above seed + 3, "
                     "fail above seed + 6, and never tighter than the defaults." if state.data.get("validate_seed_strain") is not None else ""),
                  table=rows, poses=pose_list, max_images=len(pose_list))
+
+
+def header(state: RunState) -> tuple[list, list]:
+    """(chips, stat tiles) for the top of the report, from whatever the run has done so far."""
+    t, c = state.target, list(state.candidates.values())
+    chips = [("Run", state.data["run_id"])]
+    if t.get("pdb_id"):
+        chips.append(("Structure", f"{t['pdb_id']}" + (f" · {t['resolution']} Å" if t.get("resolution") else "")))
+    if t.get("resname"):
+        chips.append(("Site ligand", f"{t['resname']} chain {t.get('chain', '')}"))
+    if t.get("uniprot"):
+        chips.append(("UniProt", t["uniprot"]))
+    ch = t.get("chembl") or {}
+    if ch.get("best_target"):
+        chips.append(("ChEMBL", f"{ch['best_target']} · {ch['n_ic50']} IC50 molecules"))
+    mlip = next((s.get("mlip") for s in reversed(state.data["steps"]) if s["step"] == "validate"), None)
+    if mlip:
+        chips.append(("MLIP", mlip))
+    stats = []
+    if len(c) > 1:
+        by_src = Counter(src["source"] for r in c for src in r["sources"] if src["source"] != "seed")
+        stats.append(dict(label="Candidates generated", value=len(c) - 1, tone="cyan", sub=" · ".join(f"{k} {v}" for k, v in sorted(by_src.items()))))
+    filt = Counter(r["filter"]["status"] for r in c if r.get("filter"))
+    if filt:
+        stats.append(dict(label="Passed the filter", value=filt.get("pass", 0), tone="green", sub=f"warn {filt.get('warn', 0)} · fail {filt.get('fail', 0)}"))
+    docked = [r for r in c if r.get("dock", {}).get("status") == "ok"]
+    if docked:
+        stats.append(dict(label="Docked", value=len(docked), tone="blue", sub=f"best Vina {min(r['dock']['best_score'] for r in docked)} kcal/mol"))
+        n_site = sum(bool(r["dock"].get("in_site")) for r in docked)
+        exp = t.get("expected_residues") or []
+        if any("site_expected" in r["dock"] for r in docked):
+            stats.append(dict(label="In the binding site", value=n_site, tone="magenta",
+                              sub=f"pose reproduces ≥50% of the {len(exp)} crystal contacts"))
+    val = Counter(r["validate"]["verdict"] for r in c if r.get("validate", {}).get("status") == "ok")
+    if val:
+        stats.append(dict(label="MLIP validated", value=sum(val.values()), tone="orange",
+                          sub=" · ".join(f"{val[k]} {k}" for k in ("accept", "demote", "reject") if k in val)))
+    return chips, stats

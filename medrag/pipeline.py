@@ -28,8 +28,10 @@ def build_report(state: RunState, open_browser: bool = False) -> str:
     """Write runs/<id>/report.html (and open it in the browser if asked); returns its path."""
     t0 = ui.step_start("report", "PyMOL stills + 3Dmol views (stills are cached between runs)")
     t = state.target
-    rep = Report(state.dir, title=f"{t.get('name', state.data['run_id'])} hit-to-lead", receptor=t.get("receptor"),
-                 subtitle=f"seed {state.data['seed']} | run {state.data['run_id']}", reference_sdf=t.get("crystal_ligand"))
+    rep = Report(state.dir, title=f"{t.get('name', state.data['run_id'])} · hit-to-lead", receptor=t.get("receptor"),
+                 subtitle=f"Seed molecule: {state.data['seed']}", reference_sdf=t.get("crystal_ligand"))
+    chips, stats = report_steps.header(state)
+    rep.set_header(chips=chips, stats=stats)
     report_steps.add_generate_section(rep, state)
     if any("filter" in r for r in state.candidates.values()):
         report_steps.add_filter_section(rep, state)
