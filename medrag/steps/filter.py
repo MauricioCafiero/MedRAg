@@ -65,9 +65,12 @@ def protonate(smiles: str, ph: float = PH) -> str:
     catechols/phenols as ambiguous and 'class-mean' deprotonates them, although phenol pKa is ~10 (catechol ~9.3), so at pH 7.4
     they are neutral. Amines and carboxylic acids keep cafprot's assignment. Electron-poor phenols (pKa < 8) are therefore
     missed - a known limitation."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         norm = cafprot.normalize_smiles(smiles, ph, warn_if_ambiguous=False)
+    if any("protonation failed" in str(w.message) for w in caught) and not getattr(protonate, "_warned", False):
+        protonate._warned = True                      # said once: cafprot returns the input unchanged when its dependency is missing
+        ui.warn("charge states were NOT assigned (cafprot's dimorphite-dl is missing: run setup.sh); molecules keep their input charges")
     mol = Chem.MolFromSmiles(norm)
     if mol is None:
         return smiles
