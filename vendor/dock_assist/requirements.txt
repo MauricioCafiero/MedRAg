@@ -1,0 +1,16 @@
+openbabel-wheel
+ollama
+rdkit
+scipy
+scikit-learn
+pubchempy
+pandas
+requests
+rcsb-api
+dockstring
+rich
+# metal-site docking (dock_metal_site_agent): meeko preps receptor/ligand PDBQTs
+# for the AD4Zn path; gemmi + prody are meeko's receptor-prep dependencies.
+meeko
+gemmi
+prody

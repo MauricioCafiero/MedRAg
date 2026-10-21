@@ -1,0 +1,9 @@
+.venv/
+runs/
+logs/
+__pycache__/
+*.pyc
+setup.log
+*.traj
+.env
+vendor/*/outputs/

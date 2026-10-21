@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Generated outputs
+outputs/*
+!outputs/.gitkeep
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Env files
+.env
+
+# SULT dataset build cache: the bulk ZINC download only.
+# The small chembl_*.json / bindingdb_*.json pulls under data/cache/ stay tracked,
+# so the raw source records survive a ChEMBL outage.
+data/cache/zinc/
+data/cache/zinc_background_props_*.csv
+data/cache/martiny2013_suppl.zip
+
+# Untracked project scratch notes
+SULT_PROJECT_TODO.md

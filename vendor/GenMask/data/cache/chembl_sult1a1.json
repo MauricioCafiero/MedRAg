@@ -1,0 +1,254 @@
+[
+ {
+  "smiles": "O=[N+]([O-])c1ccc(O)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL14130",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "CCc1ccc(O)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL108475",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "Cc1ccc(O)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL16645",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "Oc1ccc2ccccc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL14126",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "CC(=O)Nc1ccc(O)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL112",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "Nc1cc(N2CCCCC2)nc(N)[n+]1[O-]",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL802",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "Cn1c(NO)nc2ncc(-c3ccccc3)cc21",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL1743302",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "NC(Cc1ccc(Oc2ccc(O)c(I)c2)c(I)c1)C(=O)O",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL1743303",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "N[C@@H](Cc1cc(I)c(Oc2ccc(O)c(I)c2)c(I)c1)C(=O)O",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL1544",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "C[C@]12CC[C@@H]3c4ccc(O)cc4CC[C@H]3[C@@H]1CC[C@@H]2O",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL135",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "NCCc1ccc(O)c(O)c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL59",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "CC(C)[N+](=O)[O-]",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL261886",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "CN1CCc2cccc3c2[C@H]1Cc1ccc(O)c(O)c1-3",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL53",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "Cc1c(C)c2c(c(C)c1O)CCC(C)(COc1ccc(CC3SC(=O)NC3=O)cc1)O2",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL408",
+  "activity": "Activity="
+ },
+ {
+  "smiles": "C#C[C@]1(O)CC[C@H]2[C@@H]3CCc4cc(O)ccc4[C@H]3CC[C@@]21C",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL691",
+  "activity": "IC50=20.0nM"
+ },
+ {
+  "smiles": "CN(C)CCOc1ccc(/C(=C(/CCCl)c2ccccc2)c2ccc(O)cc2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL1402",
+  "activity": "Vmax=8.5nmol/min"
+ },
+ {
+  "smiles": "Cc1cc2c(F)c(Oc3ncnn4cc(OC[C@@H](C)O)c(C)c34)ccc2[nH]1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL377300",
+  "activity": "Drug metabolism="
+ },
+ {
+  "smiles": "Cc1cc2c(F)c(Oc3ncnn4cc(OC[C@@H](C)OS(=O)(=O)O)c(C)c34)ccc2[nH]1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL3527569",
+  "activity": "Drug metabolism="
+ },
+ {
+  "smiles": "Oc1ccc2cc[nH]c2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL2413822",
+  "activity": "Vmax=20.26nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2ccoc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL351630",
+  "activity": "Vmax=26.5nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2ccsc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4576268",
+  "activity": "Vmax=9.78nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2ncsc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4591322",
+  "activity": "Vmax=10.35nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2ncoc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4555091",
+  "activity": "Vmax=13.2nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2nc[nH]c2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4551859",
+  "activity": "Vmax=8.5nmol/min/mg"
+ },
+ {
+  "smiles": "Cc1nc2ccc(O)cc2s1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4533187",
+  "activity": "Vmax=10.3nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2[nH]ccc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL404923",
+  "activity": "Vmax=12.84nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2occc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL349283",
+  "activity": "Vmax=9.87nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2sccc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4528997",
+  "activity": "Vmax=11.15nmol/min/mg"
+ },
+ {
+  "smiles": "Cc1nc2cc(O)ccc2s1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4534520",
+  "activity": "Vmax=19.3nmol/min/mg"
+ },
+ {
+  "smiles": "Oc1ccc2nc(-c3ccccc3)sc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL47361",
+  "activity": "Vmax=5.25nmol/min/mg"
+ },
+ {
+  "smiles": "CNc1ccc(-c2nc3ccc(O)cc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL93124",
+  "activity": "Km="
+ },
+ {
+  "smiles": "CN(C)c1ccc(-c2nc3ccc(O)cc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL91449",
+  "activity": "Km="
+ },
+ {
+  "smiles": "Nc1ccc(-c2nc3ccc(O)cc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL93884",
+  "activity": "Km="
+ },
+ {
+  "smiles": "COc1ccc(-c2nc3ccc(O)cc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4557856",
+  "activity": "Km="
+ },
+ {
+  "smiles": "CC(=O)Nc1ccc(-c2nc3ccc(O)cc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4525617",
+  "activity": "Km="
+ },
+ {
+  "smiles": "Oc1ccc2nc(-c3ccc(F)cc3)sc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL490084",
+  "activity": "Km="
+ },
+ {
+  "smiles": "Oc1ccc2nc(-c3ccc(I)cc3)sc2c1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4576000",
+  "activity": "Km="
+ },
+ {
+  "smiles": "N#Cc1ccc(-c2nc3ccc(O)cc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4560974",
+  "activity": "Km="
+ },
+ {
+  "smiles": "CS(=O)(=O)c1ccc(-c2nc3ccc(O)cc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4517100",
+  "activity": "Km="
+ },
+ {
+  "smiles": "O=[N+]([O-])c1ccc(-c2nc3ccc(O)cc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4564405",
+  "activity": "Km="
+ },
+ {
+  "smiles": "CNc1ccc(-c2nc3cc(O)ccc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL503833",
+  "activity": "Km=12.0nM"
+ },
+ {
+  "smiles": "CN(C)c1ccc(-c2nc3cc(O)ccc3s2)cc1",
+  "source": "ChEMBL",
+  "source_id": "CHEMBL4551402",
+  "activity": "Km=40.0nM"
+ }
+]

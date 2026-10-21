@@ -1,0 +1,10 @@
+modrag-env/
+scratch/
+__pycache__/
+pdb_files/
+vault/
+.DS_Store
+images/chat_image.png
+
+# Per-target GPT fine-tune checkpoints (transient; foundation assets stay tracked)
+data/GPT_*_mini_finetuned.pt
