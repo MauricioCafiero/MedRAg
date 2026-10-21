@@ -235,6 +235,7 @@ td.long { max-width: 380px; overflow:hidden; text-overflow:ellipsis; color: var(
 .chart svg { width:100%; height:auto; display:block; background: var(--bg2); border:1px solid var(--line); border-radius:12px; }
 .chart svg text { fill: #aab6d8; font-family: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; font-size: 11px; }
 .chart .ct { color: var(--orange); font-size:13px; text-transform:uppercase; letter-spacing:1px; margin: 0 0 8px; font-weight:600; }
+.chartgrid { display:grid; grid-template-columns: 1.4fr 1fr; gap:18px; margin-bottom:6px; } @media (max-width: 900px) { .chartgrid { grid-template-columns: 1fr; } }
 .vcards { display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:12px; margin-bottom:14px; }
 .vcard { background: var(--bg2); border:1px solid var(--line); border-radius:14px; padding:12px 14px; border-left:4px solid var(--blue); }
 .vcard.ok { border-left-color: var(--green); } .vcard.warn { border-left-color: var(--amber); } .vcard.bad { border-left-color: var(--red); }

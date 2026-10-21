@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import html
+import math
 from collections import Counter
 from pathlib import Path
 
@@ -57,39 +58,101 @@ def add_filter_section(rep: Report, state: RunState, max_grid: int = 24):
     rows.sort(key=lambda x: (order[x["status"]], -x["qed"]))
     tally = Counter(x["status"] for x in rows)
     ok = [x for x in rows if x["status"] != "fail"][:max_grid]
+    # charts: outcome by generator, QED vs similarity to the seed, most common fail flags
+    seed = state.data["seed"]
+    per_src: dict = {}
+    pts = []
+    for smi, r in state.candidates.items():
+        f = r.get("filter")
+        if not f or "props" not in f or smi == seed:
+            continue
+        src = next((x["source"] for x in r["sources"] if x["source"] != "seed"), "?")
+        c = per_src.setdefault(src, Counter())
+        c[f["status"]] += 1
+        pts.append((f["props"]["tanimoto_to_seed"], f["props"]["qed"], {"pass": "ok", "warn": "warn", "fail": "bad"}[f["status"]],
+                    f"{r['species']} · {f['status']} · QED {f['props']['qed']:.2f}, similarity {f['props']['tanimoto_to_seed']:.2f}"))
+    flags = Counter(x for r in state.candidates.values() for x in r.get("filter", {}).get("reasons", []) if x.endswith("fail"))
+    chart = ""
+    if pts:
+        chart = ('<div class="chartgrid"><div><div class="ct">Outcome by generator</div>'
+                 + _svg_stacked([(k, v["pass"], v["warn"], v["fail"]) for k, v in sorted(per_src.items())], w=620)
+                 + '</div><div><div class="ct">Most common fail flags</div><div class="chips" style="margin-top:6px">'
+                 + ("".join(f'<span class="chip"><b>{html.escape(k.replace(" fail", ""))}</b>{v}</span>' for k, v in flags.most_common(8)) or "none")
+                 + '</div><div class="hint" style="margin-top:12px">ADMET cut-offs are no tighter than the seed\'s own values, so a flag means '
+                 'clearly worse than the lead.</div></div></div>'
+                 '<div class="ct" style="margin-top:16px">Drug-likeness vs similarity to the seed (every candidate)</div>'
+                 + _svg_scatter(pts, "Tanimoto similarity to the seed", "QED (drug-likeness)", 0.0, 1.0, 0.35, "QED warn below 0.35")
+                 + '<div class="hint">green = pass, amber = warn, red = fail. Molecules from the GPT sit at low similarity because they are new compounds, '
+                 'not seed analogues.</div>')
     rep.add_step("filter", "Filter",
                  f"Protonated at pH 7.4, then QED / Lipinski / alerts / ADMET-AI. {tally['pass']} pass, {tally['warn']} warn, "
                  f"{tally['fail']} fail (excluding the seed and duplicates). Cut-offs are provisional.",
-                 table=rows, molecules=[dict(smiles=x["species"], legend=f"{x['status']} qed {x['qed']:.2f}") for x in ok])
+                 table=rows, molecules=[dict(smiles=x["species"], legend=f"{x['status']} qed {x['qed']:.2f}") for x in ok], chart_html=chart)
 
 
-def _svg_scatter(points: list, w: int = 960, h: int = 300) -> str:
-    """Vina score (x) against binding-site recall (y), one dot per docked pose; dots in the site green, others red, the seed blue."""
+_DOT = {"ok": "#3ddc97", "warn": "#ffd166", "bad": "#ff5c7a", "seed": "#6c8cff"}
+
+
+def _nice_step(span: float, n: int = 6) -> float:
+    raw = span / n
+    mag = 10 ** math.floor(math.log10(raw)) if raw > 0 else 1
+    return next(m * mag for m in (1, 2, 2.5, 5, 10) if m * mag >= raw)
+
+
+def _svg_scatter(points: list, xlabel: str, ylabel: str, ymin: float = 0.0, ymax: float = 1.0, hline: float | None = None,
+                 hlabel: str = "", w: int = 960, h: int = 300) -> str:
+    """Generic scatter, one dot per (x, y, kind, tooltip); kind picks the colour (ok / warn / bad / seed). Optional dashed y line."""
     ml, mr, mt, mb = 60, 24, 18, 46
     xs = [p[0] for p in points]
     lo, hi = min(xs), max(xs)
     pad = (hi - lo) * 0.06 or 0.5
     lo, hi = lo - pad, hi + pad
     sx = lambda v: ml + (v - lo) / (hi - lo) * (w - ml - mr)
-    sy = lambda v: mt + (1 - v) * (h - mt - mb)
-    out = [f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="Vina score against site recall">']
-    for yv in (0, 0.25, 0.5, 0.75, 1.0):
-        dash = ' stroke="#ffd166" stroke-dasharray="6 4" stroke-width="1.4"' if yv == 0.5 else ' stroke="#26335c"'
-        out.append(f'<line x1="{ml}" x2="{w - mr}" y1="{sy(yv):.1f}" y2="{sy(yv):.1f}"{dash}/><text x="{ml - 8}" y="{sy(yv) + 4:.1f}" text-anchor="end">{yv:g}</text>')
-    out.append(f'<text x="{w - mr}" y="{sy(0.5) - 6:.1f}" text-anchor="end" style="fill:#ffd166">in-site cut-off (recall 0.5)</text>')
-    step = max(0.5, round((hi - lo) / 6 * 2) / 2)
-    t = round(lo / step) * step
+    sy = lambda v: mt + (1 - (v - ymin) / (ymax - ymin)) * (h - mt - mb)
+    out = [f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="{html.escape(ylabel)} against {html.escape(xlabel)}">']
+    ystep = _nice_step(ymax - ymin, 4)
+    yv = ymin
+    while yv <= ymax + 1e-9:
+        out.append(f'<line x1="{ml}" x2="{w - mr}" y1="{sy(yv):.1f}" y2="{sy(yv):.1f}" stroke="#26335c"/><text x="{ml - 8}" y="{sy(yv) + 4:.1f}" text-anchor="end">{yv:g}</text>')
+        yv += ystep
+    if hline is not None:
+        out.append(f'<line x1="{ml}" x2="{w - mr}" y1="{sy(hline):.1f}" y2="{sy(hline):.1f}" stroke="#ffd166" stroke-dasharray="6 4" stroke-width="1.4"/>'
+                   f'<text x="{w - mr}" y="{sy(hline) - 6:.1f}" text-anchor="end" style="fill:#ffd166">{html.escape(hlabel)}</text>')
+    step = _nice_step(hi - lo)
+    t = math.ceil(lo / step) * step
     while t <= hi:
-        if t >= lo:
-            out.append(f'<line x1="{sx(t):.1f}" x2="{sx(t):.1f}" y1="{mt}" y2="{h - mb}" stroke="#1c2750"/><text x="{sx(t):.1f}" y="{h - mb + 16}" text-anchor="middle">{t:g}</text>')
+        out.append(f'<line x1="{sx(t):.1f}" x2="{sx(t):.1f}" y1="{mt}" y2="{h - mb}" stroke="#1c2750"/><text x="{sx(t):.1f}" y="{h - mb + 16}" text-anchor="middle">{t:g}</text>')
         t += step
-    out.append(f'<text x="{(ml + w - mr) / 2:.0f}" y="{h - 8}" text-anchor="middle">Vina score (kcal/mol) — more negative is better</text>')
-    out.append(f'<text transform="translate(16 {(mt + h - mb) / 2:.0f}) rotate(-90)" text-anchor="middle">site recall</text>')
+    out.append(f'<text x="{(ml + w - mr) / 2:.0f}" y="{h - 8}" text-anchor="middle">{html.escape(xlabel)}</text>')
+    out.append(f'<text transform="translate(16 {(mt + h - mb) / 2:.0f}) rotate(-90)" text-anchor="middle">{html.escape(ylabel)}</text>')
     for x, y, kind, title in sorted(points, key=lambda p: p[2] == "seed"):
-        col = {"ok": "#3ddc97", "bad": "#ff5c7a", "seed": "#6c8cff"}[kind]
         r, sw = (7, 2.5) if kind == "seed" else (4.2, 0)
-        out.append(f'<circle cx="{sx(x):.1f}" cy="{sy(y):.1f}" r="{r}" fill="{col}" fill-opacity="{0.95 if kind == "seed" else 0.62}" '
+        out.append(f'<circle cx="{sx(x):.1f}" cy="{sy(y):.1f}" r="{r}" fill="{_DOT[kind]}" fill-opacity="{0.95 if kind == "seed" else 0.62}" '
                    f'stroke="#e6ebf7" stroke-width="{sw}"><title>{html.escape(title)}</title></circle>')
+    out.append("</svg>")
+    return "".join(out)
+
+
+def _svg_stacked(rows: list, w: int = 960) -> str:
+    """Horizontal stacked bars: rows = [(label, pass, warn, fail)]."""
+    ml, mr, mt, rowh = 150, 40, 12, 38
+    h = mt + rowh * len(rows) + 30
+    xmax = max(p + wv + f for _, p, wv, f in rows) or 1
+    sx = lambda v: v / xmax * (w - ml - mr)
+    out = [f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="filter outcome by generator">']
+    for i, (label, p, wv, f) in enumerate(rows):
+        y, x = mt + i * rowh, ml
+        out.append(f'<text x="{ml - 10}" y="{y + 21}" text-anchor="end">{html.escape(label)} <tspan style="fill:#8e9bc0">({p + wv + f})</tspan></text>')
+        for n, col, name in ((p, "#3ddc97", "pass"), (wv, "#ffd166", "warn"), (f, "#ff5c7a", "fail")):
+            if n:
+                out.append(f'<rect x="{x:.1f}" y="{y + 6}" width="{sx(n):.1f}" height="22" fill="{col}" fill-opacity="0.85"><title>{label}: {n} {name}</title></rect>')
+                if sx(n) > 24:
+                    out.append(f'<text x="{x + sx(n) / 2:.1f}" y="{y + 21}" text-anchor="middle" style="fill:#0b1020;font-weight:700">{n}</text>')
+                x += sx(n)
+    lx = ml
+    for col, name in (("#3ddc97", "pass"), ("#ffd166", "warn"), ("#ff5c7a", "fail")):
+        out.append(f'<rect x="{lx}" y="{h - 20}" width="11" height="11" rx="3" fill="{col}"/><text x="{lx + 17}" y="{h - 10}">{name}</text>')
+        lx += 70
     out.append("</svg>")
     return "".join(out)
 
@@ -145,7 +208,7 @@ def add_dock_section(rep: Report, state: RunState, top: int = 6):
         j = d["in_site"][0] if d["in_site"] else 0
         pose_list.append(dict(name=d["species"][:28], sdf=read_poses(d["sdf"])[j][0],
                               caption=f"vina {d['poses'][j]['score']} ({'in site' if d['in_site'] else 'OFF SITE'})"))
-    chart = (f'<div class="ct">Every docked pose: Vina score vs binding-site recall</div>{_svg_scatter(points)}'
+    chart = (f'<div class="ct">Every docked pose: Vina score vs binding-site recall</div>{_svg_scatter(points, "Vina score (kcal/mol) — more negative is better", "site recall", 0.0, 1.0, 0.5, "in-site cut-off (recall 0.5)")}'
              '<div class="hint">green = pose reproduces ≥50% of the crystal ligand\'s contacts, red = it does not, blue = the seed. '
              'If the dots in one column are both green and red, the Vina score alone cannot tell the right site from the wrong one.</div>') if points else ""
     rep.add_step("dock", "Dock", f"Vina into the crystal-ligand site (centroid {state.target.get('center')}). 'In site' means the pose contacts at least "
