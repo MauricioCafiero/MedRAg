@@ -210,6 +210,8 @@ def start_validation(top: int = 3) -> str:
     cmd = [sys.executable, "-u", "-m", "medrag.pipeline", s.data["run_id"], "--steps", "validate,report",
            "--validate-top", str(int(top)), "--mlip", MLIP, "--no-open"]
     prefix = ["systemd-run", "--user", "--scope", "-p", "MemoryMax=6G", "-p", "MemorySwapMax=0"] if shutil.which("systemd-run") else []
+    if shutil.which("systemd-inhibit"):      # validation takes an hour or more: a suspended machine would freeze or kill it
+        prefix = ["systemd-inhibit", "--what=sleep:idle", "--who=medrag", "--why=MedRAg validation job", "--mode=block"] + prefix
     env = dict(os.environ, PYTHONPATH=str(ROOT))
     subprocess.Popen(prefix + cmd, cwd=ROOT, env=env, stdout=open(log, "ab"), stderr=subprocess.STDOUT,
                      stdin=subprocess.DEVNULL, start_new_session=True)
