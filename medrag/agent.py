@@ -81,7 +81,12 @@ def find_target(protein_name: str, seed_smiles: str = "") -> str:
       protein_name: gene or protein name, e.g. HMGCR or SULT1A3
       seed_smiles: optional SMILES of the molecule to optimise (leave empty to start from the crystal ligand)
     """
-    r = _find_structure(_st(), protein_name, seed=seed_smiles or None)
+    s = _st()
+    t = s.target
+    if t.get("pdb") and not seed_smiles:                            # already done for this run: reuse it, do not search RCSB again
+        return (f"Already set up for this run (cached): structure {Path(t['pdb']).stem}, bound ligand {t['resname']} chain {t['chain']}; "
+                f"seed {s.data['seed']}.")
+    r = _find_structure(s, protein_name, seed=seed_smiles or None)
     c = r["chembl"]
     return (f"Binding site set from PDB {r['pdb_id']} ({r['resolution']} A), bound ligand {r['resname']} chain {r['chain']}; "
             f"seed {r['seed']}{' (given by the user)' if seed_smiles else ' (the crystal ligand)'}. UniProt {r['uniprot']}. "
@@ -110,6 +115,10 @@ def generate_analogues() -> str:
     """Propose analogues of the seed with GenMask (masked-language-model SMILES infilling) and bioisostere_assist
     (shape-matched substituent swaps). Adds them to the run; run filter_candidates next."""
     s = _st()
+    have = {x["source"] for r in s.candidates.values() for x in r["sources"]}
+    if {"genmask", "bioisostere"} <= have:                          # already generated: do not add new molecules to a finished run
+        n = len(s.candidates) - 1
+        return f"Analogues already generated for this run (cached): {n} candidates in total."
     r = _generate(s, s.data["seed"])
     return f"Generated: {r['new']} new candidates ({r['total']} total). Errors: {r['errors'] or 'none'}"
 
@@ -121,6 +130,8 @@ def find_chembl_target(protein_name: str) -> str:
     Args:
       protein_name: gene or protein name, e.g. HMGCR
     """
+    if any(x["source"] == "gpt" for r in _st().candidates.values() for x in r["sources"]):
+        return "ChEMBL data set already chosen and used for this run (cached)."
     r = _find_chembl_target(_st(), protein_name)
     pairs = list(zip(r["chembl"][0], r["counts"][0])) if r.get("chembl") and r["chembl"][0] else []
     return f"UniProt {r['uniprot']}; ChEMBL targets with IC50 bioactivity counts: {pairs or 'none found'}"
@@ -136,6 +147,8 @@ def generate_with_gpt(chembl_id: str = "") -> str:
       chembl_id: optional ChEMBL target id to use instead (see find_chembl_target); leave empty for the automatic choice
     """
     s = _st()
+    if any(x["source"] == "gpt" for r in s.candidates.values() for x in r["sources"]):
+        return f"GPT molecules already generated for this run (cached): {len(s.candidates) - 1} candidates in total."
     r = _generate(s, s.data["seed"], sources=("gpt",), chembl_id=chembl_id or None)
     return f"GPT generated: {r['new']} new candidates ({r['total']} total). Errors: {r['errors'] or 'none'}"
 
@@ -144,14 +157,22 @@ def filter_candidates() -> str:
     """Protonate candidates at pH 7.4 and grade them on drug-likeness (QED, Lipinski), structural alerts (PAINS) and
     ADMET-AI predictions (hERG, AMES, DILI, carcinogenicity, skin reaction, LD50, CYP inhibition, bioavailability, BBB).
     Each candidate gets pass / warn / fail; candidates that fail are not docked."""
-    return f"Filter result (counts): {_filter_candidates(_st())}"
+    s = _st()
+    if s.step_done("filter") and all("filter" in r for r in s.candidates.values()) and any(r.get("dock") for r in s.candidates.values()):
+        from collections import Counter                              # already filtered and docked: keep those results, do not re-grade
+        return f"Filter results already exist for this run (cached): {dict(Counter(r['filter']['status'] for r in s.candidates.values()))}"
+    return f"Filter result (counts): {_filter_candidates(s)}"
 
 
 def dock_candidates() -> str:
     """Dock the seed and every candidate that did not fail the filter with AutoDock Vina into the crystal-ligand site.
     Takes a few minutes for a few dozen molecules. Vina scores alone do not tell you whether a pose is in the right site:
     run check_binding_site next."""
-    r = _dock_candidates(_st())
+    s = _st()
+    n = sum(r.get("dock", {}).get("status") == "ok" for r in s.candidates.values())
+    if n:                                                            # docking was already done for this run: do not dock more
+        return f"Docking already done for this run (cached): {n} molecules docked."
+    r = _dock_candidates(s)
     return f"Docked {r['docked']} molecules ({r['failed']} failed)."
 
 
@@ -281,6 +302,9 @@ SYSTEM = f"""You are MedRAg, CafChem's medicinal chemistry agent, a hit-to-lead 
 {', '.join(t.__name__ for t in TOOLS)}.
 Order: find_target (when the user gives only a protein name) or set_target (when they give a PDB file) -> generate_analogues (optionally also find_chembl_target + generate_with_gpt) -> filter_candidates -> dock_candidates -> check_binding_site -> start_validation
 -> build_report (the report opens in the user's browser). Call run_status first if you are unsure what has been done.
+When the user asks you to develop leads (or run the pipeline) for a protein, do the WHOLE pipeline in order without stopping to ask: find_target, generate_analogues,
+generate_with_gpt, filter_candidates, dock_candidates, check_binding_site, start_validation then validation_status until it has finished, run_boltz, build_report; then summarise the
+results. Every step reuses finished work for the run, so on a run that already exists the tools return at once: say that the results came from the cache.
 
 Ground rules:
 - Report numbers only from tool output; never invent scores, residues or SMILES. If a tool errors, say so and what you tried.
@@ -290,7 +314,7 @@ Ground rules:
   correctness test; do not present its verdicts as binding predictions.
 - A candidate keeps its docking result even if a later filter run changes its filter status, so a 'fail' can appear next to a docked pose; say so, do not call it undocked.
 - Filter cut-offs are provisional. Say so when a filter outcome drives a conclusion.
-- run_boltz spends the user's Modal credit: call it only when the user asks for Boltz or co-folding, and never twice in a row. Its results are a second opinion (binder probability, pIC50), not a ranking. Identify the seed only from the 'role' column of show_candidates('boltz'); never guess which row is the seed. Quote the seed's own Boltz scores when comparing.
+- run_boltz spends the user's Modal credit: call it only when the user asks for Boltz or co-folding or to develop leads (the whole pipeline), and never twice in a row. Its results are a second opinion (binder probability, pIC50), not a ranking. Identify the seed only from the 'role' column of show_candidates('boltz'); never guess which row is the seed. Quote the seed's own Boltz scores when comparing.
 - start_validation is slow (~8-10 min per molecule) and runs in the background; do not start it twice, poll validation_status.
 - Be concise."""
 
