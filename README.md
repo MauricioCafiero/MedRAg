@@ -97,6 +97,7 @@ ligand, or the docked pose behind a relaxed one) as grey lines. 3Dmol loads from
 | dock | AutoDock Vina through dock_assist, in chunks, top 3 poses each | `steps/dock.py` |
 | site | contact residues of the crystal ligand are the expected set; each pose is scored by recall of them | `steps/site.py` |
 | validate | MLIP feasibility checks on the best in-site pose of the top candidates | `steps/validate.py`, `feasibility/` |
+| boltz (optional) | Boltz-2 co-folding and affinity for the validated finalists, on a Modal GPU only (no local option yet) | `steps/boltz.py`, `boltz_modal.py` |
 | report | HTML | `report.py`, `steps/report_steps.py` |
 
 **Site check.** Vina scores did not separate the right site from the wrong one on SULT1A3. Recall of the crystal ligand's
@@ -113,6 +114,14 @@ not suppressed) and contact persistence. Strain is graded relative to the seed: 
 never tighter than the defaults. Default MLIP is MACE-POLAR-1 small (`polar1-s`); UMA (`uma`) was no better on SULT1A3 and about
 1.7x slower. Dynamics (`final_stability`) is a finalist-only stability check and is not part of the routine run. Every relaxation is
 checkpointed and resumable.
+
+**Boltz (optional, Modal only).** `--boltz modal` sends each validated finalist (the seed included) to a Modal A10G running Boltz-2, which
+predicts the protein-ligand complex from sequence and SMILES and scores affinity (binder probability, pIC50, IC50, dG). It is a second
+opinion, not a rescoring of the docking, and its structure is shown in Boltz's own frame, not on the crystal receptor. The weights are
+baked into the Modal image, so there is no storage charge; one SULT1A3 molecule took about 2 min and cost $0.04, and each call is capped at 10 minutes.
+Run `modal setup` once to log in. The first molecule builds the sequence alignment (the public ColabFold server, so the protein sequence is sent
+there) and the rest reuse it. Running Boltz locally on CPU worked for a 31-residue peptide but took about 33 min for the structure alone on a
+295-residue protein, so a local option is not included.
 
 ## What the results do and do not show
 
@@ -158,6 +167,9 @@ repo's `LICENSE` beside it. Everything not listed here is new in this repo.
 | [UMADock](https://github.com/MauricioCafiero/UMADock) | `8b3b34a` | `prep_binding_site.py` | cutting the binding site out of the protein for the MLIP checks |
 | [cafprot](https://github.com/MauricioCafiero/cafprot) | `d3da76e` | `cafprot.py` | charge state of each molecule at pH 7.4 |
 | [FAO_MOLPROP_CLI](https://github.com/MauricioCafiero/FAO_MOLPROP_CLI) | `46e8672` | `docking_module.py` | residue-contact analysis behind the binding-site check |
+
+The Boltz step uses [Boltz-2](https://github.com/jwohlwend/boltz) (MIT), installed in the Modal image rather than copied here; the affinity
+conversion (pIC50 = 6 - y, dG = -1.364 x pIC50) follows the author's [boltz_local](https://github.com/MauricioCafiero/boltz_local).
 
 ## License
 
