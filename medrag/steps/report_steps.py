@@ -90,7 +90,7 @@ def add_filter_section(rep: Report, state: RunState, max_grid: int = 24):
                  table=rows, molecules=[dict(smiles=x["species"], legend=f"{x['status']} qed {x['qed']:.2f}") for x in ok], chart_html=chart)
 
 
-_DOT = {"ok": "#3ddc97", "warn": "#ffd166", "bad": "#ff5c7a", "seed": "#6c8cff"}
+_DOT = {"ok": "#3ddc97", "warn": "#ffd166", "bad": "#ff5c7a", "seed": "#5F7ADB"}
 
 
 def _nice_step(span: float, n: int = 6) -> float:
@@ -113,7 +113,7 @@ def _svg_scatter(points: list, xlabel: str, ylabel: str, ymin: float = 0.0, ymax
     ystep = _nice_step(ymax - ymin, 4)
     yv = ymin
     while yv <= ymax + 1e-9:
-        out.append(f'<line x1="{ml}" x2="{w - mr}" y1="{sy(yv):.1f}" y2="{sy(yv):.1f}" stroke="#26335c"/><text x="{ml - 8}" y="{sy(yv) + 4:.1f}" text-anchor="end">{yv:g}</text>')
+        out.append(f'<line x1="{ml}" x2="{w - mr}" y1="{sy(yv):.1f}" y2="{sy(yv):.1f}" stroke="#4a5160"/><text x="{ml - 8}" y="{sy(yv) + 4:.1f}" text-anchor="end">{yv:g}</text>')
         yv += ystep
     if hline is not None:
         out.append(f'<line x1="{ml}" x2="{w - mr}" y1="{sy(hline):.1f}" y2="{sy(hline):.1f}" stroke="#ffd166" stroke-dasharray="6 4" stroke-width="1.4"/>'
@@ -128,7 +128,7 @@ def _svg_scatter(points: list, xlabel: str, ylabel: str, ymin: float = 0.0, ymax
     for x, y, kind, title in sorted(points, key=lambda p: p[2] == "seed"):
         r, sw = (7, 2.5) if kind == "seed" else (4.2, 0)
         out.append(f'<circle cx="{sx(x):.1f}" cy="{sy(y):.1f}" r="{r}" fill="{_DOT[kind]}" fill-opacity="{0.95 if kind == "seed" else 0.62}" '
-                   f'stroke="#e6ebf7" stroke-width="{sw}"><title>{html.escape(title)}</title></circle>')
+                   f'stroke="#f2f4f8" stroke-width="{sw}"><title>{html.escape(title)}</title></circle>')
     out.append("</svg>")
     return "".join(out)
 
@@ -142,12 +142,12 @@ def _svg_stacked(rows: list, w: int = 960) -> str:
     out = [f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="filter outcome by generator">']
     for i, (label, p, wv, f) in enumerate(rows):
         y, x = mt + i * rowh, ml
-        out.append(f'<text x="{ml - 10}" y="{y + 21}" text-anchor="end">{html.escape(label)} <tspan style="fill:#8e9bc0">({p + wv + f})</tspan></text>')
+        out.append(f'<text x="{ml - 10}" y="{y + 21}" text-anchor="end">{html.escape(label)} <tspan style="fill:#aeb6c8">({p + wv + f})</tspan></text>')
         for n, col, name in ((p, "#3ddc97", "pass"), (wv, "#ffd166", "warn"), (f, "#ff5c7a", "fail")):
             if n:
                 out.append(f'<rect x="{x:.1f}" y="{y + 6}" width="{sx(n):.1f}" height="22" fill="{col}" fill-opacity="0.85"><title>{label}: {n} {name}</title></rect>')
                 if sx(n) > 24:
-                    out.append(f'<text x="{x + sx(n) / 2:.1f}" y="{y + 21}" text-anchor="middle" style="fill:#0b1020;font-weight:700">{n}</text>')
+                    out.append(f'<text x="{x + sx(n) / 2:.1f}" y="{y + 21}" text-anchor="middle" style="fill:#202326;font-weight:700">{n}</text>')
                 x += sx(n)
     lx = ml
     for col, name in (("#3ddc97", "pass"), ("#ffd166", "warn"), ("#ff5c7a", "fail")):
@@ -165,7 +165,7 @@ def _svg_strain_bars(items: list, seed_strain: float | None, warn: float, fail: 
     sx = lambda v: ml + v / xmax * (w - ml - mr)
     col = {"accept": "#3ddc97", "demote": "#ffd166", "reject": "#ff5c7a"}
     out = [f'<svg viewBox="0 0 {w} {h}" role="img" aria-label="ligand strain per validated molecule">']
-    for k, (xv, c, name, dash) in enumerate(((seed_strain, "#6c8cff", "seed", ""), (warn, "#ffd166", "warn", ' stroke-dasharray="6 4"'),
+    for k, (xv, c, name, dash) in enumerate(((seed_strain, "#5F7ADB", "seed", ""), (warn, "#ffd166", "warn", ' stroke-dasharray="6 4"'),
                                               (fail, "#ff5c7a", "fail", ' stroke-dasharray="6 4"'))):
         if xv is not None:                                         # labels on three different rows so they never overlap
             ty = 14 + 16 * k
@@ -174,7 +174,7 @@ def _svg_strain_bars(items: list, seed_strain: float | None, warn: float, fail: 
     for i, (label, v, verdict) in enumerate(items):
         y = mt + i * rowh
         out.append(f'<text x="{ml - 10}" y="{y + 17}" text-anchor="end" style="font-family:ui-monospace,Menlo,monospace">{html.escape(label)}</text>'
-                   f'<rect x="{ml}" y="{y + 5}" width="{max(sx(v) - ml, 1):.1f}" height="16" rx="4" fill="{col.get(verdict, "#6c8cff")}" fill-opacity="0.85"/>'
+                   f'<rect x="{ml}" y="{y + 5}" width="{max(sx(v) - ml, 1):.1f}" height="16" rx="4" fill="{col.get(verdict, "#5F7ADB")}" fill-opacity="0.85"/>'
                    f'<text x="{sx(v) + 6:.1f}" y="{y + 17}">{v:.1f}</text>')
     out.append(f'<text x="{(ml + w - mr) / 2:.0f}" y="{h - 4}" text-anchor="middle">ligand strain (kcal/mol), docked geometry vs the lowest vacuum minimum</text></svg>')
     return "".join(out)
@@ -325,12 +325,12 @@ def add_boltz_section(rep: Report, state: RunState):
         import json
         data = json.dumps(models).replace("</", "<\\/")
         chart += ('<h3>Rotatable view (Boltz complex)</h3><div class="viewwrap"><div class="tabs" id="bz_tabs"></div>'
-                  '<div class="viewer" id="bz_view"></div><div class="legend"><span><i style="background:#7b8cff"></i>protein ribbon</span>'
+                  '<div class="viewer" id="bz_view"></div><div class="legend"><span><i style="background:#5F7ADB"></i>protein ribbon</span>'
                   '<span><i style="background:#ffd166"></i>predicted ligand (thick sticks)</span><span>drag to rotate, scroll to zoom</span></div></div>'
                   f'<script>window.addEventListener("load", function () {{ const M = {data}; let v = null;'
-                  'function show(i) { if (!v) v = $3Dmol.createViewer(document.getElementById("bz_view"), { backgroundColor: "#0b1020" });'
+                  'function show(i) { if (!v) v = $3Dmol.createViewer(document.getElementById("bz_view"), { backgroundColor: "#202326" });'
                   'v.removeAllModels(); const m = v.addModel(M[i].cif, "cif");'
-                  'v.setStyle({}, { cartoon: { color: "#7b8cff", opacity: 0.5, arrows: true } });'
+                  'v.setStyle({}, { cartoon: { color: "#5F7ADB", opacity: 0.5, arrows: true } });'
                   'v.setStyle({ chain: "B" }, { stick: { radius: 0.3, colorscheme: "yellowCarbon" } });'
                   'v.zoomTo({ chain: "B" }); v.zoom(0.6); v.render();'
                   'document.querySelectorAll("#bz_tabs button").forEach((b, k) => b.classList.toggle("active", k === i)); }'
