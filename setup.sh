@@ -17,7 +17,7 @@ uv pip install --python $PY \
     "setuptools<81.0.0" submitit torchtnt websockets "ray[serve]>=2.53.0" wandb \
     ollama anthropic rich psutil pytest \
     pubchempy openbabel-wheel dockstring meeko transformers lightgbm openmm pdbfixer "graph-longrange==0.4.0" \
-    pymol-open-source chembl_webresource_client rcsb-api dimorphite-dl pdb2pqr
+    pymol-open-source chembl_webresource_client rcsb-api dimorphite-dl pdb2pqr modal
 
 uv pip install --python $PY --no-deps "fairchem-core==2.21.0" "mace-torch==0.3.16"
 

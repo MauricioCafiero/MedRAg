@@ -295,3 +295,50 @@ def header(state: RunState) -> tuple[list, list]:
         stats.append(dict(label="MLIP validated", value=sum(val.values()), tone="orange",
                           sub=" · ".join(f"{val[k]} {k}" for k in ("accept", "demote", "reject") if k in val)))
     return chips, stats
+
+
+def add_boltz_section(rep: Report, state: RunState):
+    """Boltz-2 co-folding of the finalists: a table and cards from the affinity/confidence text files, and a rotatable view of each cif
+    (Boltz's own protein + ligand complex, in its own frame, so it is not overlaid on the crystal receptor used elsewhere)."""
+    rows, cards, models = [], [], []
+    seed = state.data["seed"]
+    for smi, r in state.candidates.items():
+        b = r.get("boltz")
+        if not b or b.get("status") != "ok":
+            continue
+        name = r.get("dock", {}).get("species", smi)
+        tag = " (the seed)" if smi == seed else ""
+        rows.append(dict(species=name + tag, pIC50=b["pic50"], IC50_uM=b["ic50_uM"], dG_kcal=b["dG_kcal"], binder_prob=b["binder_prob"],
+                         confidence=b["confidence"], iptm=b["iptm"], md_verdict=r.get("validate", {}).get("verdict", "")))
+        tone = "ok" if b["binder_prob"] >= 0.5 else "warn"
+        cards.append(f'<div class="vcard {tone}"><div class="vtop"><span class="pill {tone}">binder {b["binder_prob"]:.2f}</span>'
+                     f'<span class="vname" title="{html.escape(name)}">{html.escape(name + tag)}</span></div><div class="vm">'
+                     f'<div><b>{b["pic50"]:.2f}</b><small>pIC50</small></div><div><b>{b["ic50_uM"]:.1f}</b><small>IC50 µM</small></div>'
+                     f'<div><b>{b["dG_kcal"]:.1f}</b><small>ΔG kcal/mol</small></div><div><b>{b["confidence"]:.2f}</b><small>confidence</small></div></div></div>')
+        cif = Path(b["cif"])
+        if cif.is_file():
+            models.append(dict(name=name[:28], cif=cif.read_text()))
+    if not rows:
+        return
+    chart = f'<div class="vcards">{"".join(cards)}</div>'
+    if models:
+        import json
+        data = json.dumps(models).replace("</", "<\\/")
+        chart += ('<h3>Rotatable view (Boltz complex)</h3><div class="viewwrap"><div class="tabs" id="bz_tabs"></div>'
+                  '<div class="viewer" id="bz_view"></div><div class="legend"><span><i style="background:#7b8cff"></i>protein ribbon</span>'
+                  '<span><i style="background:#ffd166"></i>predicted ligand (thick sticks)</span><span>drag to rotate, scroll to zoom</span></div></div>'
+                  f'<script>window.addEventListener("load", function () {{ const M = {data}; let v = null;'
+                  'function show(i) { if (!v) v = $3Dmol.createViewer(document.getElementById("bz_view"), { backgroundColor: "#0b1020" });'
+                  'v.removeAllModels(); const m = v.addModel(M[i].cif, "cif");'
+                  'v.setStyle({}, { cartoon: { color: "#7b8cff", opacity: 0.5, arrows: true } });'
+                  'v.setStyle({ chain: "B" }, { stick: { radius: 0.3, colorscheme: "yellowCarbon" } });'
+                  'v.zoomTo({ chain: "B" }); v.zoom(0.6); v.render();'
+                  'document.querySelectorAll("#bz_tabs button").forEach((b, k) => b.classList.toggle("active", k === i)); }'
+                  'const t = document.getElementById("bz_tabs");'
+                  'M.forEach((m, i) => { const b = document.createElement("button"); b.textContent = m.name; b.onclick = () => show(i); t.appendChild(b); });'
+                  'show(0); });</script>')
+    rep.add_step("boltz", "Boltz-2 co-folding (finalists)",
+                 "Boltz-2 predicts the whole protein-ligand complex from the sequence and SMILES, with no docking box, and scores affinity with its own head. "
+                 "It is an independent second opinion on the finalists, not a rescoring of the docking. Binder probability is Boltz's chance the molecule binds at all; "
+                 "pIC50 is only meaningful for comparing molecules that already bind. The view shows Boltz's own complex, which is not overlaid on the crystal receptor above.",
+                 table=rows, chart_html=chart)

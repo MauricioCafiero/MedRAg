@@ -62,7 +62,7 @@ python -m medrag.pipeline sult_demo --pdb 2A3R.pdb --resname LDP --chain A \
 ```
 
 `--crystal-smiles` (default: the seed) gives the co-crystallized ligand's structure; `--recall-cut` (default 0.5) sets the
-binding-site test below; `--max-dock N` docks only the best N; `--gpt` adds the mini-GPT as a third generator (`--gpt-chembl CHEMBL402` to choose its ChEMBL data set yourself); `--no-open` stops the report opening in the browser.
+binding-site test below; `--max-dock N` docks only the best N; `--gpt` adds the mini-GPT as a third generator (`--gpt-chembl CHEMBL402` to choose its ChEMBL data set yourself); `--no-open` stops the report opening in the browser. `--boltz modal` (with `boltz` in `--steps`, after `validate`) co-folds the validated finalists with Boltz-2 on a Modal GPU: run `modal setup` once to log in; about 2 min and a few cents per molecule (the weights are baked into the image, so there is no storage charge).
 
 The agent (MoDrAg-style REPL; the same run directory is resumed, including the chat). It needs an LLM key:
 
