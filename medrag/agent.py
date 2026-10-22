@@ -1,5 +1,5 @@
 """CafChem MedRAg agent: a MoDrAg-style command-line assistant that drives the hit-to-lead pipeline
-(set_target -> generate -> filter -> dock -> site -> validate -> report) through tool calls.
+(set_target -> generate -> filter -> dock -> site -> validate -> [boltz] -> report) through tool calls.
 
     python -m medrag.agent --run sult_e2e [--backend ollama|anthropic] [--model NAME] [--print]
     python -m medrag.agent --run sult_e2e --once "Filter the candidates and show me the best five."
@@ -22,6 +22,7 @@ from medrag import pipeline, ui
 from medrag.report import open_in_browser
 from medrag.llm import DEFAULT_MODELS, make_backend, run_turn
 from medrag.state import RunState
+from medrag.steps.boltz import boltz_finalists as _boltz_finalists
 from medrag.steps.dock import dock_candidates as _dock_candidates
 from medrag.steps.filter import filter_candidates as _filter_candidates
 from medrag.steps.discover import find_structure as _find_structure
@@ -36,7 +37,7 @@ STATE: RunState | None = None
 QUIET = False                # --quiet hides tool calls and results (the steps' own status lines still print)
 OPEN_BROWSER = True          # --no-open turns this off
 _OPENED = False              # open the report tab once per session; later refreshes just overwrite the file (reload the tab)
-STATE_CHANGING = {"set_target", "generate_analogues", "generate_with_gpt", "filter_candidates", "dock_candidates", "check_binding_site"}
+STATE_CHANGING = {"set_target", "generate_analogues", "generate_with_gpt", "filter_candidates", "dock_candidates", "check_binding_site", "run_boltz"}
 
 
 def _st() -> RunState:
@@ -64,7 +65,8 @@ def run_status() -> str:
              f"candidates: {len(s.candidates)}; filtered: {sum('filter' in r for r in c)}; "
              f"docked: {sum(r.get('dock', {}).get('status') == 'ok' for r in c)}; "
              f"in site: {sum(bool(r.get('dock', {}).get('in_site')) for r in c)}; "
-             f"validated: {sum(r.get('validate', {}).get('status') == 'ok' for r in c)}"]
+             f"validated: {sum(r.get('validate', {}).get('status') == 'ok' for r in c)}; "
+             f"Boltz co-folded: {sum(r.get('boltz', {}).get('status') == 'ok' for r in c)}"]
     return "\n".join(lines)
 
 
@@ -165,7 +167,7 @@ def show_candidates(stage: str = "docked", n: int = 10) -> str:
     """Show candidates as a table, best first.
 
     Args:
-      stage: one of 'filtered' (all candidates with their filter status), 'docked' (ranked by Vina score of the best in-site pose, else the best pose), or 'validated' (MLIP feasibility results)
+      stage: one of 'filtered' (all candidates with their filter status), 'docked' (ranked by Vina score of the best in-site pose, else the best pose), 'validated' (MLIP feasibility results) or 'boltz' (Boltz-2 co-folding results)
       n: maximum number of rows
     """
     s = _st()
@@ -194,7 +196,15 @@ def show_candidates(stage: str = "docked", n: int = 10) -> str:
                 rows.append([r["dock"]["species"], v["verdict"], c["ligand_strain"]["value"], c["force_residuals"]["value"],
                              c["contact_persistence"]["value"], "; ".join(v["reasons"])[:120]])
         return _table(rows[:n], ["species", "verdict", "strain kcal/mol", "force eV/A", "contacts", "flags"]) if rows else "Nothing validated yet."
-    return "stage must be 'filtered', 'docked' or 'validated'"
+    if stage == "boltz":
+        for r in s.candidates.values():
+            b = r.get("boltz")
+            if b and b.get("status") == "ok":
+                rows.append([r["dock"]["species"], "SEED (the known crystal ligand)" if r["smiles"] == s.data["seed"] else "candidate", b["pic50"], b["ic50_uM"],
+                             b["dG_kcal"], b["binder_prob"], b["confidence"], r.get("validate", {}).get("verdict", "")])
+        rows.sort(key=lambda x: -x[5])
+        return _table(rows[:n], ["species", "role", "pIC50", "IC50 uM", "dG kcal/mol", "binder prob", "confidence", "MLIP verdict"]) if rows else "No Boltz results yet."
+    return "stage must be 'filtered', 'docked', 'validated' or 'boltz'"
 
 
 def start_validation(top: int = 3) -> str:
@@ -233,6 +243,21 @@ def validation_status() -> str:
     return f"running: {running}; validated so far: {done}; errors: {err or 'none'}{note}\nlog tail: {tail}"
 
 
+def run_boltz() -> str:
+    """Co-fold the validated finalists (the seed and the molecules that went through validate) with Boltz-2 on a Modal GPU,
+    which predicts each protein-ligand complex and its affinity (binder probability, pIC50, IC50, dG). It is an independent
+    second opinion on the finalists, not a rescoring of the docking. It costs real money on the user's Modal account (a few
+    cents per molecule, about 2-3 minutes in total), so call it ONLY when the user asks for Boltz or co-folding. Molecules that
+    already have a result are skipped, so repeating it is free. Run it after validation has finished."""
+    s = _st()
+    if not any(r.get("validate") for r in s.candidates.values()):
+        return "Nothing has been validated yet: Boltz runs on the validated finalists. Run start_validation first."
+    r = _boltz_finalists(s, backend="modal")
+    done = sum(x.get("boltz", {}).get("status") == "ok" for x in s.candidates.values())
+    return f"Boltz-2 results exist for {done} finalists. Show them with show_candidates('boltz')." if done else \
+        "Boltz did not run (no Modal login: the user needs to run `modal setup` once) or every call failed; see the step output."
+
+
 def refresh_report() -> tuple[str, bool]:
     """Rebuild the HTML report; open it in the browser the first time this session. Returns (path, opened_now)."""
     global _OPENED
@@ -250,7 +275,7 @@ def build_report() -> str:
 
 
 TOOLS = [run_status, find_target, set_target, generate_analogues, find_chembl_target, generate_with_gpt, filter_candidates, dock_candidates, check_binding_site,
-         show_candidates, start_validation, validation_status, build_report]
+         show_candidates, start_validation, validation_status, run_boltz, build_report]
 
 SYSTEM = f"""You are MedRAg, CafChem's medicinal chemistry agent, a hit-to-lead drug design assistant. You drive one pipeline with these tools:
 {', '.join(t.__name__ for t in TOOLS)}.
@@ -265,6 +290,7 @@ Ground rules:
   correctness test; do not present its verdicts as binding predictions.
 - A candidate keeps its docking result even if a later filter run changes its filter status, so a 'fail' can appear next to a docked pose; say so, do not call it undocked.
 - Filter cut-offs are provisional. Say so when a filter outcome drives a conclusion.
+- run_boltz spends the user's Modal credit: call it only when the user asks for Boltz or co-folding, and never twice in a row. Its results are a second opinion (binder probability, pIC50), not a ranking. Identify the seed only from the 'role' column of show_candidates('boltz'); never guess which row is the seed. Quote the seed's own Boltz scores when comparing.
 - start_validation is slow (~8-10 min per molecule) and runs in the background; do not start it twice, poll validation_status.
 - Be concise."""
 

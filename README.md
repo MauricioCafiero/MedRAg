@@ -82,6 +82,7 @@ python -m medrag --run sult_demo --backend ollama
 python -m medrag.agent --run sult_demo --backend anthropic
 python -m medrag.agent --run sult_demo --once "Filter the candidates and show me the best five."
 ```
+The agent also has a `run_boltz` tool (Boltz-2 on Modal, see below); it spends Modal credit, so it only runs when you ask for Boltz or co-folding, and it skips molecules that already have results. For example: `--once "Co-fold the finalists with Boltz and show me the results ranked by binder probability."`
 
 Each turn is planned and reviewed: one LLM call breaks the request into tasks, the agent answers the original message, and the
 reply is checked against the task list and the tool-call log. Missing tasks go back to the agent (two rounds at most) and the
