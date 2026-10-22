@@ -119,7 +119,7 @@ checkpointed and resumable.
 predicts the protein-ligand complex from sequence and SMILES and scores affinity (binder probability, pIC50, IC50, dG). It is a second
 opinion, not a rescoring of the docking, and its structure is shown in Boltz's own frame, not on the crystal receptor. The weights are
 baked into the Modal image, so there is no storage charge; one SULT1A3 molecule took about 2 min and cost $0.04, and each call is capped at 10 minutes.
-Run `modal setup` once to log in. The first molecule builds the sequence alignment (the public ColabFold server, so the protein sequence is sent
+Run `modal setup` once to log in. There is no volume to create: the first run builds the image (a one-time download of the weights, a few minutes, which Modal caches), and later runs reuse it. The first molecule builds the sequence alignment (the public ColabFold server, so the protein sequence is sent
 there) and the rest reuse it. Running Boltz locally on CPU worked for a 31-residue peptide but took about 33 min for the structure alone on a
 295-residue protein, so a local option is not included.
 
