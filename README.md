@@ -7,7 +7,7 @@ proposes analogues, filters them, docks them, checks that the poses are in the r
 checks, and writes an HTML report. An LLM agent (Ollama cloud or Anthropic) can drive every step through tool calls.
 
 ```
-set_target -> generate -> filter -> dock -> site -> validate -> report
+set_target -> generate -> filter -> dock -> site -> validate -> [boltz] -> report
 ```
 
 Built on the author's own repos: the pieces it uses were copied, unchanged, into `medrag/lib/` (see
@@ -44,6 +44,15 @@ python -m medrag.pipeline demo2 --pdb 2A3R.pdb --resname LDP --chain A --seed '[
 **What gets downloaded on first use** (into the usual per-user caches, not the repo): the MACE-POLAR-1 weights (~50 MB, public),
 the GenMask language model (~430 MB, public Hugging Face repo) and, only if you choose `--mlip uma`, UMA (~4 GB, a gated Hugging
 Face model: request access and `huggingface-cli login` first). Default is MACE-POLAR-1 small, which needs no account.
+
+**Accounts and keys: what needs one**
+
+| You want to | Needs |
+|---|---|
+| Run the pipeline from the command line (`python -m medrag.pipeline`), including the report | nothing: no account, no key |
+| Drive it with the LLM agent (`python -m medrag`) | an `OLLAMA_API_KEY` (Ollama cloud, the default) or an `ANTHROPIC_API_KEY` |
+| Use UMA as the MLIP (`--mlip uma`) | a Hugging Face account with access to the gated UMA model, then `huggingface-cli login` |
+| Add Boltz-2 co-folding (`--boltz modal`) | a [Modal](https://modal.com) account, then `modal setup` once (Modal bills your account; a molecule costs a few cents) |
 
 **Hardware.** CPU only, no GPU needed. Memory is the limit: the MLIP step peaks at about 4 GB for a 300-atom pocket and about 7.5 GB
 for a 480-atom one (HMGCR) because we need forces for relaxation. 16 GB RAM is comfortable; 8 GB handles only small sites.
