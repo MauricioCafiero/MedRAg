@@ -115,13 +115,13 @@ never tighter than the defaults. Default MLIP is MACE-POLAR-1 small (`polar1-s`)
 1.7x slower. Dynamics (`final_stability`) is a finalist-only stability check and is not part of the routine run. Every relaxation is
 checkpointed and resumable.
 
-**Boltz (optional, Modal only).** `--boltz modal` sends each validated finalist (the seed included) to a Modal A10G running Boltz-2, which
+**Boltz (optional, Modal only).** `--boltz modal` sends each validated finalist (the seed included) to a Modal A10G GPU running Boltz-2, which
 predicts the protein-ligand complex from sequence and SMILES and scores affinity (binder probability, pIC50, IC50, dG). It is a second
-opinion, not a rescoring of the docking, and its structure is shown in Boltz's own frame, not on the crystal receptor. The weights are
-baked into the Modal image, so there is no storage charge; one SULT1A3 molecule took about 2 min and cost $0.04, and each call is capped at 10 minutes.
-Run `modal setup` once to log in. There is no volume to create: the first run builds the image (a one-time download of the weights, a few minutes, which Modal caches), and later runs reuse it. The first molecule builds the sequence alignment (the public ColabFold server, so the protein sequence is sent
-there) and the rest reuse it. Running Boltz locally on CPU worked for a 31-residue peptide but took about 33 min for the structure alone on a
-295-residue protein, so a local option is not included.
+opinion, not a rescoring of the docking, and its structure is shown in Boltz's own frame, not on the crystal receptor. It runs on your own
+Modal account: install Modal (`setup.sh` does) and log in once with `modal setup`. There is no volume to create. The first run builds the
+image, which includes the Boltz weights (a one-time download of a few minutes that Modal caches); later runs reuse it. A molecule takes about
+2 minutes (a SULT1A3 test cost $0.04), and each call is capped at 10 minutes. The first molecule builds the sequence alignment on the public
+ColabFold server, so the protein sequence is sent there; the rest reuse it.
 
 ## What the results do and do not show
 
